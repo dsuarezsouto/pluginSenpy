@@ -6,7 +6,8 @@ import time
 
 import pandas as pd
 from pandas import DataFrame
-def retrieve_tweets(query, filePath, count=200):
+from datetime import date,timedelta
+def retrieve_tweets(query, filePath, count=6000):
 
     consumer_key = 'n9j2KmkV3FFWkzgGeq4XdPWCp'
     consumer_secret = 'TszufpKDVtR9rkEkfBS8SdljhqMuxO26ohnUqqDjfTNk2xvJrx'
@@ -22,20 +23,47 @@ def retrieve_tweets(query, filePath, count=200):
     max_tweets = int(max_tweets)
     print(max_tweets)
     searched_tweets = []
-    last_id = -1
+    #Read the tweets of yesterday
+    local_time_obj=date.today()
+    local_time_obj=local_time_obj-timedelta(2)
+    datetime=local_time_obj.strftime("%Y_%m_%d_%H_%M_%S")
+    if os.path.exists('tweets/{}.json'.format(datetime)):
+        file=open('tweets/{}.json'.format(datetime),"r")
+        lines=file.readlines()
+        file.close()
+
+        since_id = json.loads(lines[-1])["id"]
+    else:
+        since_id=-1
+
+    last_id=-1
+    print("LAST_ID: ".format(last_id))
+    #last_id=-1
+    #Number connections
+    count_connections=0
+    MAX_CONNECTIONS=15
     while len(searched_tweets) < max_tweets:
         count = max_tweets - len(searched_tweets)
         try:
-            new_tweets = api.search(q=query, count=count, max_id=str(last_id - 1))
+            new_tweets = api.search(q=query, count=count,since_id=since_id, max_id=str(last_id - 1),geocode="40.416775,-3.703790,820km",include_rts=False)
+            #wq = bitter.crawlers.TwitterQueue.from_credentials('credentials.json')
+            #new_tweets = wq.statuses.search_tweet(q=query, count=count, include_rts=False)
             #wq = bitter.crawlers.TwitterQueue.from_credentials()
             #new_tweets = wq.statuses.user_timeline(screen_name=entry['nif:isString'], count=count, include_rts=False)
             if not new_tweets:
                 break
             searched_tweets.extend(new_tweets)
             last_id = new_tweets[-1].id
+            count_connections+=1
+            if count_connections>=MAX_CONNECTIONS:
+                count_connections=0
+                time.sleep(60)
+                print("We have to wait 1 minute because of the limit connection")
         except tweepy.TweepError as e:
+
             # depending on TweepError.code, one may want to retry or wait
             # to keep things simple, we will give up on an error
+
             break
     with open(filePath, 'a') as output:        
         for item in searched_tweets:

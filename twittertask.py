@@ -1,4 +1,5 @@
 import datetime
+from datetime import date,timedelta
 import json
 import random
 import imp
@@ -64,7 +65,7 @@ class ScrapyTask(luigi.Task):
         #scraperImported.startScraping(self.url, filePath)
         #local_time_obj = localtime()
         #datetime = strftime("%Y_%m_%d_%H_%M_%S", local_time_obj)
-        
+
         if self.user_twitter:
             filePath='timeline/{}.json'.format(self.user_twitter)
             retrieve_timeline(self.user_twitter,filePath,self.num)
@@ -119,7 +120,7 @@ class AnalizeTask(luigi.Task):
                 if analisis:
                     # Create JSON object for the tweet: created_at,id,user,user_id,text,is_insomniac
                     #tweet_user=json.loads(tweet["user"])
-                    tweetDic={'created_at':tweet["created_at"],'id_str':tweet["id_str"],'user':tweet["user"],'text':tweet["text"],'is_insomniac':analisis[0],'theme': analisis[1]}
+                    tweetDic={'_id':tweet["id"],'created_at':tweet["created_at"],'id_str':tweet["id_str"],'user':tweet["user"]["id"],'text':tweet["text"],'is_insomniac':analisis[0],'theme': analisis[1]}
                     tweetJson=json.dumps(tweetDic)
                     fout.write(tweetJson +'\n')
 
@@ -151,10 +152,12 @@ class Elasticsearch(CopyToIndex):
     # user twitter id
     user_twitter=luigi.Parameter(default=None) 
     # date Parameter
-    local_time_obj = localtime()
-    datetime = strftime("%Y_%m_%d_%H_%M_%S", local_time_obj)
+    #local_time_obj = localtime()
+    local_time_obj=date.today()
+    #local_time_obj=local_time_obj-timedelta(1)
+    datetime=local_time_obj.strftime("%Y_%m_%d_%H_%M_%S")
 
-    #: the name of the index in ElasticSearch to be updated.
+    #: the name luiof the index in ElasticSearch to be updated.
     index = luigi.Parameter()
     #: the name of the document type.
     doc_type = luigi.Parameter()
@@ -163,7 +166,7 @@ class Elasticsearch(CopyToIndex):
     #: the port used by the ElasticSearch service.
     port = 9200
     #: settings used in ElasticSearch index creation.
-    settings = {"index.mapping.total_fields.limit":5000, "number_of_shards": 1, "number_of_replicas": 0}
+    settings = {"index.mapping.total_fields.limit":6000, "number_of_shards": 1, "number_of_replicas": 0}
     #: timeout for ES post
     timeout = 100
 
