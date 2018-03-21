@@ -1,0 +1,24 @@
+{
+    "name": "insomniaDetector",
+    "module": "dream",
+    "description": "Service for detecting insomniac",
+    "author": "Daniel Suarez Souto",
+    "version": "1.0",
+    "extra_params": {
+        "language": {
+            "aliases": ["language", "l", "lang"],
+            "required": true,
+            "options": ["esp"],
+            "default": "esp"
+        },
+    },
+    "requirements": {bs4,nltk, pandas, sklearn, numpy, scipy},
+
+    "dataset": "/train.csv",
+    "themeCatalogue": "/themeTrain.csv",
+    "fileWords_a":"/topWords_a.csv",
+    "fileWords_b":"/topWords_b.csv",
+    "fileWords_c":"/topWords_c.csv",
+    "fileWords_d":"/topWords_d.csv",
+    "fileWords_e":"/topWords_e.csv",
+}
