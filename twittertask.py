@@ -55,7 +55,7 @@ class ScrapyTask(luigi.Task):
         """
         Writes data in JSON format into the task's output target.
         The data objects have the following attributes:
-        * `_id` is the default Elasticsearch id field,
+        * `_id` is  the default Elasticsearch id field,
         * `text`: the text,
         * `date`: the day when the data was created.
         """
@@ -166,7 +166,7 @@ class Elasticsearch(CopyToIndex):
     #: the port used by the ElasticSearch service.
     port = 9200
     #: settings used in ElasticSearch index creation.
-    settings = {"index.mapping.total_fields.limit":6000, "number_of_shards": 1, "number_of_replicas": 0}
+    settings = {"index.mapping.total_fields.limit":6000, "number_of_shards": 1, "number_of_replicas": 1}
     #: timeout for ES post
     timeout = 100
 

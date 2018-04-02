@@ -7,7 +7,7 @@ import time
 import pandas as pd
 from pandas import DataFrame
 from datetime import date,timedelta
-def retrieve_tweets(query, filePath, count=6000):
+def retrieve_tweets(query, filePath, count=3000):
 
     consumer_key = 'n9j2KmkV3FFWkzgGeq4XdPWCp'
     consumer_secret = 'TszufpKDVtR9rkEkfBS8SdljhqMuxO26ohnUqqDjfTNk2xvJrx'
@@ -25,7 +25,7 @@ def retrieve_tweets(query, filePath, count=6000):
     searched_tweets = []
     #Read the tweets of yesterday
     local_time_obj=date.today()
-    local_time_obj=local_time_obj-timedelta(2)
+    local_time_obj=local_time_obj-timedelta(1)
     datetime=local_time_obj.strftime("%Y_%m_%d_%H_%M_%S")
     if os.path.exists('tweets/{}.json'.format(datetime)):
         file=open('tweets/{}.json'.format(datetime),"r")
@@ -37,7 +37,7 @@ def retrieve_tweets(query, filePath, count=6000):
         since_id=-1
 
     last_id=-1
-    print("LAST_ID: ".format(last_id))
+    print("SINCE_ID:{} ".format(since_id))
     #last_id=-1
     #Number connections
     count_connections=0
@@ -52,7 +52,14 @@ def retrieve_tweets(query, filePath, count=6000):
             #new_tweets = wq.statuses.user_timeline(screen_name=entry['nif:isString'], count=count, include_rts=False)
             if not new_tweets:
                 break
-            searched_tweets.extend(new_tweets)
+            # Filter Rts
+            for tweet in new_tweets:
+                tweetString = json.dumps(tweet._json)
+                tweetJson = json.loads(tweetString)
+                print(tweetJson['text'])
+                if not "retweeted_status" in tweetJson:
+                    searched_tweets.append(tweet)
+            #searched_tweets.extend(new_tweets)
             last_id = new_tweets[-1].id
             count_connections+=1
             if count_connections>=MAX_CONNECTIONS:
