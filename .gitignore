@@ -1,0 +1,6 @@
+backup
+__pycache__
+senpy_data
+*.csv
+tweets
+tweetsClasificados

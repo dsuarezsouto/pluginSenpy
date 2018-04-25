@@ -32,7 +32,7 @@ def retrieve_tweets(query, filePath, count=3000):
         lines=file.readlines()
         file.close()
 
-        since_id = json.loads(lines[-1])["id"]
+        since_id = json.loads(lines[0])["id"]
     else:
         since_id=-1
 
@@ -45,7 +45,7 @@ def retrieve_tweets(query, filePath, count=3000):
     while len(searched_tweets) < max_tweets:
         count = max_tweets - len(searched_tweets)
         try:
-            new_tweets = api.search(q=query, count=count,since_id=since_id, max_id=str(last_id - 1),geocode="40.416775,-3.703790,820km",include_rts=False)
+            new_tweets = api.search(q=query, count=count,since_id=str(since_id), max_id=str(last_id - 1),geocode="40.416775,-3.703790,820km")
             #wq = bitter.crawlers.TwitterQueue.from_credentials('credentials.json')
             #new_tweets = wq.statuses.search_tweet(q=query, count=count, include_rts=False)
             #wq = bitter.crawlers.TwitterQueue.from_credentials()
