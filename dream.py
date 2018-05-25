@@ -147,18 +147,18 @@ class DreamPlugin(AnalysisPlugin):
             print("THEME: {}".format(theme))
             # Decodificamos el theme
             if theme==0:
-                themeText= "Transmite solo su trastorno de sueño"
+                themeText= "Solo el trastorno de sueño"
             elif theme==1:
-                themeText= "Transmite su trastorno de sueño y da las causas de su problema"
+                themeText= "Trastorno de sueño y causas"
             elif theme==2:
-                themeText="Transmite su trastorno de sueño y solicita ayuda"
+                themeText="Trastorno de sueño y solicita ayuda"
             elif theme==3:
-                themeText="Transmite su trastorno de sueño y comenta la actividad que hace durante la noche"
+                themeText="Trastorno de sueño y la actividad que hace durante la noche"
             elif theme==4:
-                themeText= "Transmite su trastorno del sueño e indica la medida en su vida diaria durante la noche que toma para intentar evitarlo"
+                themeText= "Trastorno del sueño e indica la medida que toma para intentar evitarlo"
             else:
                 themeText="ERROR AL CATALOGAR EL TEMA"
-            entity = {'@id':'Entity0','text':text,'is_insomniac':is_insomniac,'theme':themeText}
+            entity = {'@id':'Entity0','text':text,'is_insomniac':is_insomniac,'theme':str(theme),'themeText':themeText}
         else:
             is_insomniac = False
             entity = {'@id':'Entity0','text':text,'is_insomniac':is_insomniac}

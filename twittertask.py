@@ -18,22 +18,12 @@ from twitter import *
 import requests
 
 from time import localtime,strftime
-global keys
-keys=["AIzaSyARXfonr3RDXQcx8WW1DH4XVbtyw6gpPdE","AIzaSyDbNb9mF_4gcsjj5nBzaDsGAa_2BjyBXL8",
-      "AIzaSyA4Z1aY6AqMupXK2PEUtGhE6tlsZNWSjYE","AIzaSyC4I3lQ3TVBbdCHExY9nG9q8eA1HQM7_Ak",
-      "AIzaSyCffeDCEhhxrzOZSElEOCOVLo74Tvpc7mg","AIzaSyCCR7MTO2JvjCC6i6BDuoBoqNav3P4pjVU",
-      "AIzaSyDHQFvlUCpLUumNpjCDelXJOcymTOEPqgI","AIzaSyD7b7Kb2PpX0t4BPWb5IsMD_dd0OrMaGaU",
-      "AIzaSyBt0g9YBfueoDVlhtoF0iWfP6kOssZEOco","AIzaSyBAafBm_xxV0RUNQphUbVJ3pcb96LI0RBw",
-      "AIzaSyDIVrCq7PpWDFWpXafHzLdcoumwGxBkBEE","AIzaSyDZmhApFqZkopZ1LqNzRbDoCOz6m-I-ec8",
-      "AIzaSyBtMlO5VhQ8zF_SndzAaCG8oq0AaRR3qAY","AIzaSyBgv5082XwL7hBU8E5-BgxZcRvNMxZrOrk"]
 
-global index
-index = 0
-global key
-key=keys[index]
-global count
-count=0
-
+class ExceptionTask(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
 
 def analizeInsomniaSenpy(tweet):
         r = requests.get("http://localhost:5000/api?algo=insomniaDetector&i={}".format(tweet))
@@ -50,10 +40,22 @@ def analizeSentimentSenpy(tweet):
         response=r.json()
         sentiment=response['entries'][0]['sentiments']
 
+
         if sentiment:
             return sentiment
         else:
             return None
+
+def analizeEmotionSenpy(tweet):
+
+    r = requests.get("http://senpy.cluster.gsi.dit.upm.es/api/?algo=EmoTextANEW&i={}&language=es".format(tweet))
+    response=r.json()
+    emotion=response['entries'][0]['emotions'][0]['onyx:hasEmotion'][0]["onyx:hasEmotionCategory"]
+    emotion=emotion.split('#')[1]
+    if emotion:
+        return emotion
+    else:
+        return None
 
 def analizeLocation(tweet):
     global keys
@@ -74,12 +76,11 @@ def analizeLocation(tweet):
     except:
         print("Error al geolocalizar {} :(".format(location))
         print(response)
+        if(response["status"]=="OVER_QUERY_LIMIT"):
+            raise ExceptionTask("All of keys have exceeded their daily request quota.")
 
         latitud="ERROR AL GEOLOCALIZAR"
         longitud="ERROR AL GEOLOCALIZAR"
-    #else:
-        
-        #geolocationText = "{},{}".format(geolocationi["lat"],geolocationi["lng"])
    
     count +=1
     if (count ==2495):
@@ -95,6 +96,29 @@ def analizeLocation(tweet):
     tweet["Longitud"]=longitud
     tweet["Latitud"]=latitud
     return tweet
+
+
+def loadCredentials():
+
+    if os.path.isfile(".credentials_google"):
+        global keys
+        keys=[]
+        with open(".credentials_google") as credentials:
+            for credential in credentials:
+                keys.append(credential.strip())
+                print(credential.strip())
+
+        #if len(keys)==0:
+        #    raise ExceptionTask("File .credentials_google is empty")
+        global key
+        global index
+        index=0
+        global count
+        count=0
+        key=keys[index]
+    else:
+        raise ExceptionTask("File .credentials_google not found")
+        
 
 class ScrapyTask(luigi.Task):
     """
@@ -176,16 +200,19 @@ class AnalizeTask(luigi.Task):
             return luigi.LocalTarget(path='tweetsClasificados/{}.json'.format(self.datetime))
     def run(self):
         with self.input().open() as fin, self.output().open('w') as fout:
+            # Version con fichero credentials
+            loadCredentials()
             for line in fin:
                 tweet=json.loads(line) 
                 analisisInsomnia=analizeInsomniaSenpy(tweet['text'])
                 if analisisInsomnia:
                     analisisSentiment=analizeSentimentSenpy(tweet['text'])
+                    analisisEmotion=analizeEmotionSenpy(tweet['text'])
                     tweet=analizeLocation(tweet)
                     if tweet["Longitud"]!="ERROR AL GEOLOCALIZAR":
                         # Create JSON object for the tweet: created_at,id,user,user_id,text,is_insomniac
                         #tweet_user=json.loads(tweet["user"])
-                        tweetDic={'_id':tweet["id"],'created_at':tweet["created_at"],'id_str':tweet["id_str"],'user':tweet["user"]["id"],'text':tweet["text"],'long':tweet["Longitud"],'lat':tweet["Latitud"],'sentiment':analisisSentiment,'is_insomniac':analisisInsomnia[0],'theme': analisisInsomnia[1]}
+                        tweetDic={'_id':tweet["id"],'created_at':tweet["created_at"],'id_str':tweet["id_str"],'user':tweet["user"]["id"],'text':tweet["text"],'long':tweet["Longitud"],'lat':tweet["Latitud"],'sentiment':analisisSentiment,'emotion':analisisEmotion,'is_insomniac':analisisInsomnia[0],'theme': analisisInsomnia[1]}
                         tweetJson=json.dumps(tweetDic)
                         fout.write(tweetJson +'\n')
 
@@ -209,7 +236,7 @@ class Elasticsearch(CopyToIndex):
         $ curl -XDELETE "localhost:9200/update_log/_query?q=target_index:example_index"
     """
     #: date task parameter (default = today)
-    id = luigi.Parameter(default=time.time())
+    id = luigi.Parameter(default=date.today())
 
     query = luigi.Parameter()
 

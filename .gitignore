@@ -4,3 +4,4 @@ senpy_data
 *.csv
 tweets
 tweetsClasificados
+.credentials_google
